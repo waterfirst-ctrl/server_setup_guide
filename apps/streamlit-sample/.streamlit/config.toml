@@ -1,0 +1,20 @@
+[server]
+port            = 8501
+address         = "127.0.0.1"   # 로컬호스트에만 바인드 (Nginx 경유)
+headless        = true
+enableCORS      = false
+enableXsrfProtection = true
+
+# Nginx 리버스 프록시 경로가 /app/ 인 경우
+# baseUrlPath 를 아래처럼 맞춰 주세요
+# baseUrlPath = "app"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base            = "dark"
+primaryColor    = "#58a6ff"
+backgroundColor = "#0d1117"
+secondaryBackgroundColor = "#161b22"
+textColor       = "#e6edf3"

@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# systemd 서비스 초안
+# 서비스명 : streamlit-sample
+# 앱 경로  : /home/waterfirst/apps/streamlit-sample/
+# 내부 포트: 8501
+#
+# [적용 방법]
+#   sudo ln -s /home/waterfirst/deploy/systemd/streamlit-sample.service \
+#              /etc/systemd/system/streamlit-sample.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now streamlit-sample
+#
+# [상태 확인]
+#   sudo systemctl status streamlit-sample
+#   journalctl -u streamlit-sample -f
+# ─────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=Waterfirst · Streamlit Sample App (port 8501)
+Documentation=https://docs.streamlit.io
+After=network.target
+Wants=network-online.target
+
+[Service]
+# ── 실행 사용자/그룹 ──────────────────────────────────────────────────────────
+User=waterfirst
+Group=waterfirst
+
+# ── 작업 디렉터리 ─────────────────────────────────────────────────────────────
+WorkingDirectory=/home/waterfirst/apps/streamlit-sample
+
+# ── venv 활성화 후 실행 ───────────────────────────────────────────────────────
+# venv 가 없으면 아래 명령으로 먼저 생성:
+#   cd /home/waterfirst/apps/streamlit-sample
+#   python3 -m venv venv
+#   venv/bin/pip install -r requirements.txt
+ExecStart=/home/waterfirst/apps/streamlit-sample/venv/bin/streamlit run app.py \
+    --server.port=8501 \
+    --server.address=127.0.0.1 \
+    --server.headless=true
+
+# ── 재시작 정책 ──────────────────────────────────────────────────────────────
+Restart=always
+RestartSec=5s
+StartLimitInterval=60s
+StartLimitBurst=3
+
+# ── 환경 변수 ─────────────────────────────────────────────────────────────────
+Environment="HOME=/home/waterfirst"
+Environment="PYTHONUNBUFFERED=1"
+# 추가 환경 변수가 있으면 아래 파일에 KEY=VALUE 형식으로 작성
+# EnvironmentFile=/home/waterfirst/apps/streamlit-sample/.env
+
+# ── 로그 설정 ─────────────────────────────────────────────────────────────────
+StandardOutput=append:/home/waterfirst/logs/streamlit-sample/stdout.log
+StandardError=append:/home/waterfirst/logs/streamlit-sample/stderr.log
+
+# ── 보안 강화 (선택) ──────────────────────────────────────────────────────────
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/waterfirst/apps/streamlit-sample \
+               /home/waterfirst/logs/streamlit-sample
+
+[Install]
+WantedBy=multi-user.target
