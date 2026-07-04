@@ -378,5 +378,6 @@ ss -tlnp | grep LISTEN                    # 열린 포트 목록
 
 | 날짜 | 변경 내용 |
 |------|-----------|
+| 2026-07-04 | 🔧 [트러블슈팅 보고서](docs/troubleshooting-ip-port-nginx.md) 추가 — IP/포트 → 도메인 서브경로 배포 문제 해결 과정, Nginx conf 동작 버전 반영 |
 | 2026-07-04 | 0장(배경·디렉터리 설계), 3장(IP→도메인), 5장(Streamlit 배포), 6장(신규 앱 체크리스트) 추가 |
 | 초기 | 기본 우분투 세팅, VS Code Tunnel, Docker 멀티포트 배포 가이드 작성 |
