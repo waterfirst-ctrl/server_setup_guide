@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>핸드폰을 서버로 만드는 방법 — 품질팀 실전 가이드</title>
+  <style>
+    :root{
+      --bg:#f8fafc; --card:#ffffff; --ink:#0f172a; --mut:#475569; --line:#e2e8f0;
+      --pri:#2563eb; --ok:#16a34a; --warn:#d97706; --vio:#7c3aed; --soft:#eff6ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Apple SD Gothic Neo,Noto Sans KR,sans-serif;background:linear-gradient(180deg,#f8fafc 0,#eef4ff 100%);color:var(--ink);line-height:1.7}
+    a{color:var(--pri);text-decoration:none}
+    .wrap{max-width:1120px;margin:0 auto;padding:32px 20px 64px}
+    .hero{background:linear-gradient(135deg,#ffffff 0,#eff6ff 100%);border:1px solid #dbeafe;border-radius:24px;padding:28px;box-shadow:0 18px 50px rgba(37,99,235,.08)}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:.83rem;font-weight:800}
+    h1{font-size:clamp(2rem,4vw,3rem);line-height:1.15;margin:14px 0 10px}
+    .lead{font-size:1.06rem;color:#334155;max-width:900px}
+    .nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    .nav a{padding:9px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:.92rem}
+    .section{margin-top:28px;background:rgba(255,255,255,.76);backdrop-filter:blur(4px);border:1px solid var(--line);border-radius:22px;padding:24px}
+    .label{font-size:.82rem;font-weight:800;color:var(--pri);letter-spacing:.08em;text-transform:uppercase}
+    h2{font-size:1.55rem;margin:10px 0 12px}
+    h3{font-size:1.08rem;margin:0 0 10px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+    .blue{background:#eff6ff;border-color:#bfdbfe}
+    .green{background:#f0fdf4;border-color:#bbf7d0}
+    .amber{background:#fff7ed;border-color:#fed7aa}
+    .vio{background:#faf5ff;border-color:#ddd6fe}
+    ul{margin:0;padding-left:18px}
+    li{margin:6px 0}
+    .code{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:16px 18px;overflow:auto;font:500 .92rem/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+    .flow{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:16px;padding:16px}
+    .kicker{font-size:.93rem;color:var(--mut);margin:0 0 10px}
+    .check{margin:0;padding-left:0;list-style:none}
+    .check li::before{content:"✓ ";color:var(--ok);font-weight:800}
+    details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+    summary{cursor:pointer;font-weight:700}
+    .footer{margin-top:24px;font-size:.9rem;color:#64748b}
+    @media (max-width:860px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <span class="badge">삼성디스플레이 품질팀 실전 가이드</span>
+      <h1>핸드폰을 서버로 만드는 방법</h1>
+      <p class="lead">
+        결론부터 말하면 <b>안드로이드는 “작은 내부 서버” 용도로 가능</b>하고, <b>아이폰은 실험용 정도</b>가 현실적이다.
+        다만 팀 공용 핵심 서버를 대체하기보다는, <b>데모·학습·임시 내부 공유</b> 용도로 보는 것이 맞다.
+      </p>
+      <div class="nav">
+        <a href="index.html">← 3차 세미나 메인</a>
+        <a href="claude-masterclass-2026.html">확장자료</a>
+        <a href="server-laptop-hosting-guide.html">서버 노트북 호스팅</a>
+        <a href="#s1">가능한가</a>
+        <a href="#s2">안드로이드</a>
+        <a href="#s3">아이폰</a>
+        <a href="#s4">서버 노트북 호스팅</a>
+        <a href="#s5">보안/한계</a>
+        <a href="#s6">운영 체크리스트</a>
+      </div>
+      <figure style="margin:20px 0 0">
+        <img src="images/phone-server-architecture-kor.png" alt="핸드폰 서버 구성도" style="width:100%;border-radius:18px;border:1px solid #dbeafe;box-shadow:0 14px 36px rgba(37,99,235,.10)">
+        <figcaption style="margin-top:10px;font-size:.92rem;color:#64748b">핵심 흐름: 안드로이드 폰에서 작은 서버를 띄우고, 같은 와이파이에서 접속하거나, 상세 가이드는 서버 노트북에서 HTML로 안정적으로 호스팅하는 방식이 가장 현실적이다.</figcaption>
+      </figure>
+    </section>
+
+    <section class="section" id="s1">
+      <div class="label">Reality Check</div>
+      <h2>핸드폰 서버, 어디까지 가능한가</h2>
+      <div class="grid-3">
+        <div class="card blue">
+          <h3>가능한 일</h3>
+          <ul>
+            <li>정적 HTML 페이지 제공</li>
+            <li>간단한 Python/FastAPI 서버</li>
+            <li>같은 와이파이 안 파일 공유</li>
+            <li>SSH 접속/학습용 리눅스 실습</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h3>애매한 일</h3>
+          <ul>
+            <li>여러 명 동시 접속</li>
+            <li>장시간 백그라운드 실행</li>
+            <li>로그/백업/권한 관리</li>
+            <li>지속적인 배치 작업</li>
+          </ul>
+        </div>
+        <div class="card vio">
+          <h3>비추천</h3>
+          <ul>
+            <li>팀 공용 핵심 DB 서버</li>
+            <li>24시간 안정 운영</li>
+            <li>사내 기밀 데이터 장기 보관</li>
+            <li>대용량 분석/다중 앱 운영</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer"><b>한 줄 결론:</b> “핸드폰으로 서버 개념을 익히고, 작은 데모를 돌리는 것”은 좋다. 그러나 팀 자산 서버는 결국 노트북/PC/VM으로 가는 편이 맞다.</p>
+    </section>
+
+    <section class="section" id="s2">
+      <div class="label">Android</div>
+      <h2>안드로이드 폰: 가장 현실적인 방법은 Termux</h2>
+      <div class="grid-2">
+        <div class="card green">
+          <h3>왜 안드로이드가 유리한가</h3>
+          <ul class="check">
+            <li>Termux로 리눅스 비슷한 환경 구성 가능</li>
+            <li>Python, Node.js, openssh, nginx 설치 가능</li>
+            <li>같은 와이파이에서 내부 서버처럼 테스트 가능</li>
+            <li>남는 안드로이드 폰 재활용에 적합</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h3>주의점</h3>
+          <ul>
+            <li>절전모드가 백그라운드 프로세스를 죽일 수 있다</li>
+            <li>장시간 충전 시 발열/배터리 수명 이슈</li>
+            <li>Docker 같은 일반 서버 스택은 기대하기 어렵다</li>
+            <li>기업 운영 서버 수준의 안정성은 없다</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3>설치 순서</h3>
+        <div class="flow">
+          1. F-Droid에서 Termux 설치 → 2. 패키지 업데이트 → 3. Python/SSH/Nginx 설치 →
+          4. 테스트 서버 실행 → 5. 같은 와이파이에서 접속 확인
+        </div>
+      </div>
+
+      <div class="code" style="margin-top:16px"># Termux 기본 준비
+pkg update && pkg upgrade -y
+pkg install python openssh nginx -y
+
+# 간단한 HTML 서버
+mkdir -p ~/site
+cd ~/site
+python -m http.server 8080
+
+# 같은 와이파이의 다른 기기에서 접속
+# http://핸드폰IP:8080</div>
+
+      <details style="margin-top:16px">
+        <summary>FastAPI까지 띄우고 싶다면</summary>
+        <div class="code" style="margin-top:12px">pkg install python -y
+pip install fastapi uvicorn
+
+cat > app.py <<'PY'
+from fastapi import FastAPI
+app = FastAPI()
+
+@app.get("/")
+def home():
+    return {"status":"ok","message":"phone server running"}
+PY
+
+uvicorn app:app --host 0.0.0.0 --port 8000</div>
+        <p class="footer">이 정도는 충분히 가능하지만, 팀 공용 서비스 운영용이라기보다 데모/실험용으로 보는 편이 맞다.</p>
+      </details>
+    </section>
+
+    <section class="section" id="s3">
+      <div class="label">iPhone / iPad</div>
+      <h2>아이폰은 가능하지만 제약이 크다</h2>
+      <div class="grid-2">
+        <div class="card blue">
+          <h3>가능한 방식</h3>
+          <ul>
+            <li>iSH 같은 앱으로 제한적 쉘 환경</li>
+            <li>로컬 정적 웹서버 앱 사용</li>
+            <li>교육/실험/개인 테스트</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h3>왜 불리한가</h3>
+          <ul>
+            <li>백그라운드 장기 실행 제약이 큼</li>
+            <li>포트/네트워크 제어 자유도가 낮음</li>
+            <li>장시간 서비스 운영에 부적합</li>
+            <li>사내 서버 역할로는 비효율적</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footer">즉 아이폰은 “서버 개념을 체험하는 실험도구”로는 가능하지만, 사내 내부 서버 대체재로 추천하기 어렵다.</p>
+    </section>
+
+    <section class="section" id="s4">
+      <div class="label">Hosting</div>
+      <h2>상세가이드는 서버 노트북에서 HTML로 바로 호스팅 가능</h2>
+      <p class="kicker">이 페이지처럼 정적 HTML 문서는 가장 쉬운 방식으로 내부 공유할 수 있다.</p>
+      <div class="grid-2">
+        <div class="card green">
+          <h3>방법 1. 가장 쉬운 방법 — Python 정적 서버</h3>
+          <div class="code">cd /path/to/guide
+python -m http.server 8080</div>
+          <ul style="margin-top:10px">
+            <li>같은 네트워크에서 <code>http://노트북IP:8080/phone-server-guide.html</code> 접속</li>
+            <li>교육/시연/내부 검토용으로 매우 간단</li>
+          </ul>
+        </div>
+        <div class="card blue">
+          <h3>방법 2. 정식 운영 — Nginx</h3>
+          <div class="code">sudo apt install nginx -y
+sudo cp phone-server-guide.html /var/www/html/
+sudo systemctl restart nginx</div>
+          <ul style="margin-top:10px">
+            <li><code>http://노트북IP/phone-server-guide.html</code> 형태</li>
+            <li>여러 HTML 문서를 한 곳에서 안정적으로 관리 가능</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card vio" style="margin-top:16px">
+        <h3>품질팀 기준 추천</h3>
+        <ul>
+          <li>핸드폰은 <b>데모/학습/임시 서버</b></li>
+          <li>노트북/팀 서버는 <b>문서 호스팅/공유 플랫폼</b> — <a href="server-laptop-hosting-guide.html"><b>서버 노트북 상세가이드 보기</b></a></li>
+          <li>즉 “폰으로 서버 개념 실험 → 노트북에서 HTML 가이드 배포” 조합이 가장 현실적</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="s5">
+      <div class="label">Security & Limits</div>
+      <h2>보안과 운영 한계</h2>
+      <div class="grid-2">
+        <div class="card amber">
+          <h3>절대 주의할 점</h3>
+          <ul>
+            <li>공인 인터넷에 그대로 노출하지 말 것</li>
+            <li>회사 기밀 데이터 저장 금지</li>
+            <li>배터리 부풀음/발열/상시 충전 주의</li>
+            <li>절전모드가 서비스를 끊을 수 있음</li>
+          </ul>
+        </div>
+        <div class="card blue">
+          <h3>운영 한계</h3>
+          <ul>
+            <li>여러 명 동시 접속 시 급격히 느려질 수 있음</li>
+            <li>재부팅/앱 종료 후 자동 복구가 불편함</li>
+            <li>로그/권한/백업 체계가 약함</li>
+            <li>팀 서버를 완전히 대체할 수는 없음</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s6">
+      <div class="label">Checklist</div>
+      <h2>바로 써볼 사람을 위한 체크리스트</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>안드로이드 실습 전</h3>
+          <ul class="check">
+            <li>남는 폰인지 확인</li>
+            <li>와이파이 고정 환경인지 확인</li>
+            <li>절전 예외 설정 가능 여부 확인</li>
+            <li>기밀 데이터는 넣지 않기</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>노트북 호스팅 전</h3>
+          <ul class="check">
+            <li>같은 네트워크 접속 가능 여부 확인</li>
+            <li>방화벽/포트 정책 확인</li>
+            <li>HTML 파일 위치 정리</li>
+            <li>Nginx 또는 Python 서버 중 하나 선택</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card green" style="margin-top:16px">
+        <h3>최종 판단</h3>
+        <p style="margin:0">
+          <b>“핸드폰으로 작은 서버를 만들어보는 것”은 학습 효과가 크다.</b>
+          다만 품질팀의 실제 공용 운영은 결국 <b>Ubuntu 서버 노트북 / 팀 서버 / VM</b>으로 가져가는 것이 맞다.
+        </p>
+      </div>
+      <p class="footer">
+        참고: <a href="https://f-droid.org/en/packages/com.termux/" target="_blank" rel="noopener">Termux (F-Droid)</a>,
+        <a href="https://github.com/termux/termux-app" target="_blank" rel="noopener">Termux GitHub</a>,
+        <a href="https://wiki.termux.com/wiki/Termux-services" target="_blank" rel="noopener">Termux-services</a>,
+        <a href="https://ish.app/" target="_blank" rel="noopener">iSH</a>.
+      </p>
+    </section>
+  </div>
+</body>
+</html>
